@@ -14,13 +14,13 @@ def process_output(buffer, file_handle, prepend):
         for o in parts:
             file_handle.write(f"{get_date()} {prepend}{o}\n")
 
-def run_process(cmd, logfile, shell=[], config={}):
+def run_process(cmd, logfile, cwd=".", shell=[], config={}):
     if isinstance(cmd, str):
         cmd = shell + [cmd]
     
     with open(logfile, 'a') as f:
         f.write(f"{get_date()} - Starting log\n")
-        config['process'] = (proc := subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+        config['process'] = (proc := subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
         (out := threading.Thread(target=process_output, args=(proc.stdout, f, "stdout: "))).start()
         (err := threading.Thread(target=process_output, args=(proc.stderr, f, "stderr: "))).start()
         out.join(), err.join()
@@ -28,7 +28,7 @@ def run_process(cmd, logfile, shell=[], config={}):
 def proc_runner(c):
     time.sleep(c['init_delay'])
     while True:
-        run_process(c['cmd'], c['logfile'], c['shell'], c)
+        run_process(c['cmd'], c['logfile'], c['cwd'], c['shell'], c)
         if not c['loop']:
             break
         time.sleep(c['loop_delay'])
@@ -42,6 +42,7 @@ def normalize_config(config):
     
     for k, v in config['tasks'].items():
         config['tasks'][k] = {
+            "cwd": ".",
             "delay": 0,
             "loop": False,
             "wait": 1
@@ -57,6 +58,7 @@ def create_tasks(tasks, logdir, shell=[]):
             "cmd"       : t['exec'],
             "logfile"   : logfile,
             "shell"     : shell,
+            "cwd"       : t['cwd'],
             "init_delay": t['delay'],
             "loop"      : t['loop'],
             "loop_delay": t['wait'],

@@ -9,7 +9,8 @@
             "wait": 1
         },
         "cheese": {
-            "exec": "echo cheese haha | cat ; sleep 200",
+            "exec": "echo $PWD | cat",
+            "cwd": "/",
             "delay": 3
         }
     }
