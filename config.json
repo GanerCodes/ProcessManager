@@ -1,0 +1,16 @@
+{
+    "shell": ["sh", "-c"],
+    "logdir": "./",
+    "tasks": {
+        "hi": {
+            "exec": ["echo", "hi"],
+            "delay": 0,
+            "loop": true,
+            "wait": 1
+        },
+        "cheese": {
+            "exec": "echo cheese haha | cat ; sleep 200",
+            "delay": 3
+        }
+    }
+}
