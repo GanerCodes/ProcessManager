@@ -1,5 +1,6 @@
 {
     "shell": ["sh", "-c"],
+    "paths": ["/home/ganer/Scripts/path"],
     "logdir": "./",
     "tasks": {
         "hi": {
@@ -9,7 +10,7 @@
             "wait": 1
         },
         "cheese": {
-            "exec": "echo $PWD | cat",
+            "exec": "echo $PWD | cat ; set_lights rainbow",
             "cwd": "/",
             "delay": 3
         }

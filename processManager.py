@@ -36,6 +36,7 @@ def proc_runner(c):
 def normalize_config(config):
     config = {
         "shell": ["sh", "-c"],
+        "paths": [],
         "logdir": "~/.log/",
         "tasks": []
     } | config
@@ -50,7 +51,8 @@ def normalize_config(config):
     
     return config
 
-def create_tasks(tasks, logdir, shell=[]):
+def create_tasks(tasks, logdir, paths=[], shell=[]):
+    sys.path[0:0] = paths
     task_threads = {}
     for name, t in tasks.items():
         logfile = os.path.join(logdir, name + '.log')
@@ -71,7 +73,7 @@ def create_tasks(tasks, logdir, shell=[]):
 
 def run_config(config):
     config = normalize_config(config)
-    return create_tasks(config['tasks'], config['logdir'], config['shell'])
+    return create_tasks(config['tasks'], config['logdir'], config['paths'], config['shell'])
 
 def input_loop(tasks):
     while True:
