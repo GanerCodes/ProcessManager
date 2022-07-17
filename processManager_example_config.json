@@ -10,7 +10,7 @@
             "wait": 1
         },
         "cheese": {
-            "exec": "echo $PWD | cat ; set_lights rainbow",
+            "exec": "echo $PWD | cat",
             "cwd": "/",
             "delay": 3
         }

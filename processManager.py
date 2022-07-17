@@ -18,7 +18,7 @@ def run_process(cmd, logfile, cwd=".", shell=[], config={}):
     if isinstance(cmd, str):
         cmd = shell + [cmd]
     
-    with open(logfile, 'a') as f:
+    with open(logfile, 'a', buffering=1) as f:
         f.write(f"{get_date()} - Starting log\n")
         config['process'] = (proc := subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
         (out := threading.Thread(target=process_output, args=(proc.stdout, f, "stdout: "))).start()
