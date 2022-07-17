@@ -1,5 +1,5 @@
 # Intended usage: in ssh server config:
-# ForceCommand /path/to/this/file.py /path/to/config.json
+# ForceCommand /usr/bin/python /path/to/this/file.py /path/to/config.json
 # Serves to block stdin from a program, acting as a simple viewer, but also reserves dynamic resizing
 
 import json, time, sys, os
