@@ -1,0 +1,4 @@
+{
+    "btop": ["tmux", "a", "-t", "btop"],
+    "background_jobs": ["tmux", "a", "-t", "background_jobs"]
+}
