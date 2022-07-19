@@ -2,6 +2,7 @@
     "shell": ["sh", "-c"],
     "paths": ["/home/ganer/Scripts/path"],
     "logdir": "./",
+    "fmt": "[%Y-%m-%d %H:%M:%S.%f] {stream}: {log}",
     "tasks": {
         "hi": {
             "exec": ["echo", "hi"],

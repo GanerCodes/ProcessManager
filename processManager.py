@@ -1,10 +1,13 @@
 #!/usr/bin/python
 import subprocess, threading, datetime, signal, json, time, sys, os
 
-def get_date():
-    return datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S.%f]")
+def get_date(fmt):
+    return datetime.datetime.now().strftime(fmt)
 
-def process_output(buffer, file_handle, prepend):
+def create_log_msg(fmt, stream, log):
+    return get_date(fmt).format(stream=stream, log=log)
+
+def process_output(buffer, file_handle, prepend, fmt):
     for i in buffer:
         i = i.decode()
         parts = i.split('\n')
@@ -12,23 +15,23 @@ def process_output(buffer, file_handle, prepend):
             parts.pop(-1)
         
         for o in parts:
-            file_handle.write(f"{get_date()} {prepend}{o}\n")
+            file_handle.write(create_log_msg(fmt, prepend, o)+'\n')
 
-def run_process(cmd, logfile, cwd=".", shell=[], config={}):
+def run_process(cmd, logfile, fmt, cwd=".", shell=[], config={}):
     if isinstance(cmd, str):
         cmd = shell + [cmd]
     
     with open(logfile, 'a', buffering=1) as f:
-        f.write(f"{get_date()} - Starting log\n")
+        f.write(create_log_msg(fmt, "info", "Starting log.")+'\n')
         config['process'] = (proc := subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
-        (out := threading.Thread(target=process_output, args=(proc.stdout, f, "stdout: "))).start()
-        (err := threading.Thread(target=process_output, args=(proc.stderr, f, "stderr: "))).start()
+        (out := threading.Thread(target=process_output, args=(proc.stdout, f, "stdout", fmt))).start()
+        (err := threading.Thread(target=process_output, args=(proc.stderr, f, "stderr", fmt))).start()
         out.join(), err.join()
 
 def proc_runner(c):
     time.sleep(c['init_delay'])
     while True:
-        run_process(c['cmd'], c['logfile'], c['cwd'], c['shell'], c)
+        run_process(c['cmd'], c['logfile'], c['fmt'], c['cwd'], c['shell'], c)
         if not c['loop']:
             break
         time.sleep(c['loop_delay'])
@@ -38,7 +41,8 @@ def normalize_config(config):
         "shell": ["sh", "-c"],
         "paths": [],
         "logdir": "~/.log/",
-        "tasks": []
+        "fmt": "[%Y-%m-%d %H:%M:%S.%f] {stream}: {log}",
+        "tasks": [],
     } | config
     
     for k, v in config['tasks'].items():
@@ -46,7 +50,8 @@ def normalize_config(config):
             "cwd": ".",
             "delay": 0,
             "loop": False,
-            "wait": 1
+            "wait": 1,
+            "fmt": config['fmt']
         } | v
     
     return config
@@ -59,6 +64,7 @@ def create_tasks(tasks, logdir, paths=[], shell=[]):
         config = {
             "cmd"       : t['exec'],
             "logfile"   : logfile,
+            "fmt"       : t['fmt'],
             "shell"     : shell,
             "cwd"       : t['cwd'],
             "init_delay": t['delay'],
