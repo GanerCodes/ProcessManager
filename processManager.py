@@ -103,31 +103,34 @@ def input_loop(tasks):
         if len(command) == 0:
             continue
         
-        match command:
-            case "help", *_:
-                print("info | Shows list of tasks")
-                print("stop <task0> <task1> ... | Ends task loop if running")
-                print("kill <task0> <task1> ... | Stops task then kills process")
-            case "info", *_:
-                for name, v in tasks.items():
-                    sym = '✅' if v[0].is_alive() else '❌' 
-                    print("%s %s 🠒 %s" % (sym, name, v[1]['logfile']))
-            case ("stop"|"kill") as cmd, *names:
-                for name in names:
-                    if not tasks[name][1]['loop']:
-                        print("Loop has already been disable for task %s" % name)
-                    else:
-                        tasks[name][1]['loop'] = False
-                        print("Disabling task %s loop" % name)
-                    if cmd == "kill":
-                        if (proc := tasks[name][1]['process']) is not None:
-                            try:
-                                os.kill(proc.pid, signal.SIGUSR1)
-                                print("Sent kill signal to PID %s" % proc.pid)
-                            except ProcessLookupError:
-                                print("Task %s does not have a currently running process.")
+        try:
+            match command:
+                case "help", *_:
+                    print("info | Shows list of tasks")
+                    print("stop <task0> <task1> ... | Ends task loop if running")
+                    print("kill <task0> <task1> ... | Stops task then kills process")
+                case "info", *_:
+                    for name, v in tasks.items():
+                        sym = '✅' if v[0].is_alive() else '❌' 
+                        print("%s %s 🠒 %s" % (sym, name, v[1]['logfile']))
+                case ("stop"|"kill") as cmd, *names:
+                    for name in names:
+                        if not tasks[name][1]['loop']:
+                            print("Loop has already been disable for task %s" % name)
                         else:
-                            print("Task %s does not have a currently running process.")
+                            tasks[name][1]['loop'] = False
+                            print("Disabling task %s loop" % name)
+                        if cmd == "kill":
+                            if (proc := tasks[name][1]['process']) is not None:
+                                try:
+                                    os.kill(proc.pid, signal.SIGUSR1)
+                                    print("Sent kill signal to PID %s" % proc.pid)
+                                except ProcessLookupError:
+                                    print("Task %s does not have a currently running process.")
+                            else:
+                                print("Task %s does not have a currently running process.")
+        except Exception as err:
+            print("Command handler ran into an error? Error:", err)
 
 def check_threads_for_exit(threads):
     [v[0].join() for v in threads.values()]
