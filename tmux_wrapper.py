@@ -30,12 +30,18 @@ fname = os.path.join(FPREFIX, h)
 if len(argv) > 2:
     from time import sleep
     
+    grp = None
     if argv[1] == "-S":
         arg = argv[2]
         socket_file = arg if '/' in arg else os.path.join(FPREFIX, arg)
         sock_ins = ("-S", socket_file)
-        name = argv[3]
-        args_list = argv[4:]
+        if argv[3] == "-G":
+            grp = argv[4]
+            name = argv[5]
+            args_list = argv[6:]
+        else:
+            name = argv[3]
+            args_list = argv[4:]
     else:
         sock_ins = ()
         name = argv[1]
@@ -45,6 +51,8 @@ if len(argv) > 2:
         pickle.dump(args_list, f) # writes argument list
     
     run(["tmux", *sock_ins, "new-session", "-ds", name, f"python {script_path} {h}"])
+    if grp:
+        run(["chgrp", grp, socket_file])
     while True:
         code = run(
             ["tmux", *sock_ins, "has-session", "-t", name],
