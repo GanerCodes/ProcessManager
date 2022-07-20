@@ -42,8 +42,6 @@ if len(argv) > 2:
     
     name = args_list.pop(0)
     
-    print(flags, name, args_list)
-    
     if '-S' in flags:
         arg = flags['-S']
         socket_file = arg if '/' in arg else os.path.join(FPREFIX, arg)
