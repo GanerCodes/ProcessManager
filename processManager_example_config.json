@@ -5,7 +5,7 @@
     "fmt": "[%Y-%m-%d %H:%M:%S.%f] {stream}: {log}",
     "tasks": {
         "hi": {
-            "exec": ["echo", "hi"],
+            "exec": ["python", "./tmux_wrapper.py", "cheese", "btop"],
             "delay": 0,
             "loop": true,
             "wait": 1

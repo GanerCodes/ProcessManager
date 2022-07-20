@@ -1,0 +1,12 @@
+[2022-07-19 20:32:57.573850] info: Starting log.
+[2022-07-19 21:30:48.875287] info: Starting log.
+[2022-07-19 21:31:10.669848] info: Starting log.
+[2022-07-19 21:31:19.032478] info: Starting log.
+[2022-07-19 21:31:21.497047] info: Starting log.
+[2022-07-19 21:31:23.456792] info: Starting log.
+[2022-07-19 21:31:28.957727] stderr: Traceback (most recent call last):
+[2022-07-19 21:31:28.957820] stderr:   File "/home/ganer/Projects/Tools/processManager/./tmux_wrapper.py", line 46, in <module>
+[2022-07-19 21:31:28.957852] stderr:     sleep(CHECK_TIME)
+[2022-07-19 21:31:28.957866] stderr: KeyboardInterrupt
+[2022-07-19 21:31:29.962820] info: Starting log.
+[2022-07-19 21:31:29.989939] stderr: duplicate session: cheese

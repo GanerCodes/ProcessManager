@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Intended usage: in ssh server config:
 # ForceCommand /usr/bin/python /path/to/this/file.py /path/to/config.json
 # Serves to block stdin from a program, acting as a simple viewer, but also reserves dynamic resizing
