@@ -52,9 +52,10 @@ if len(argv) > 2:
     
     run(["tmux", *sock_ins, "new-session", "-ds", name, f"python {script_path} {h}"])
     if users:
+        run(["chmod", "+774", sock_ins[1]])
         for user in filter(None, users.split()):
-            run(["tmux", *sock_ins, "server-access", "-a", user])
             # ok so maybe the virtualizer might be replacable with tmux's server-access -r flag but idc
+            run(["tmux", *sock_ins, "server-access", "-a", user])
     while True:
         code = run(
             ["tmux", *sock_ins, "has-session", "-t", name],
