@@ -30,13 +30,13 @@ fname = os.path.join(FPREFIX, h)
 if len(argv) > 2:
     from time import sleep
     
-    grp = None
+    users = None
     if argv[1] == "-S":
         arg = argv[2]
         socket_file = arg if '/' in arg else os.path.join(FPREFIX, arg)
         sock_ins = ("-S", socket_file)
-        if argv[3] == "-G":
-            grp = argv[4]
+        if argv[3] == "-U":
+            users = argv[4]
             name = argv[5]
             args_list = argv[6:]
         else:
@@ -51,8 +51,10 @@ if len(argv) > 2:
         pickle.dump(args_list, f) # writes argument list
     
     run(["tmux", *sock_ins, "new-session", "-ds", name, f"python {script_path} {h}"])
-    if grp:
-        run(["chgrp", grp, socket_file])
+    if users:
+        for user in filter(None, users.split()):
+            run(["tmux", *sock_ins, "server-access", "-a", user])
+            # ok so maybe the virtualizer might be replacable with tmux's server-access -r flag but idc
     while True:
         code = run(
             ["tmux", *sock_ins, "has-session", "-t", name],
