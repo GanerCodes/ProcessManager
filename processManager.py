@@ -85,14 +85,15 @@ def run_config(config):
     return create_tasks(config['tasks'], config['logdir'], config['paths'], config['shell'])
 
 def input_loop(tasks):
+    prompt_text = "> "
     while True:
         try:
-            if (command := input()).strip() == 'exit':
+            if (command := input(prompt_text)).strip() == 'exit':
                 raise KeyboardInterrupt
         except KeyboardInterrupt:
             print("Press ^C or type exit to exit.")
             try:
-                if (command := input()).strip() == 'exit':
+                if (command := input(prompt_text)).strip() == 'exit':
                     raise KeyboardInterrupt
             except KeyboardInterrupt:
                 for v in tasks.values():
