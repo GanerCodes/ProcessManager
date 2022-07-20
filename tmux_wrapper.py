@@ -30,32 +30,40 @@ fname = os.path.join(FPREFIX, h)
 if len(argv) > 2:
     from time import sleep
     
-    users = None
-    if argv[1] == "-S":
-        arg = argv[2]
+    args_list = argv.copy()
+    args_list.pop(0)
+    
+    tacks = "-S -G -U".split()
+    
+    flags = {}
+    while args_list[0] in tacks:
+        arg, val = args_list.pop(0), args_list.pop(0)
+        flags[arg] = val
+    
+    name = args_list.pop(0)
+    
+    print(flags, name, args_list)
+    
+    if '-S' in flags:
+        arg = flags['-S']
         socket_file = arg if '/' in arg else os.path.join(FPREFIX, arg)
         sock_ins = ("-S", socket_file)
-        if argv[3] == "-U":
-            users = argv[4]
-            name = argv[5]
-            args_list = argv[6:]
-        else:
-            name = argv[3]
-            args_list = argv[4:]
     else:
         sock_ins = ()
-        name = argv[1]
-        args_list = argv[2:]
     
     with open(fname, 'wb') as f:
         pickle.dump(args_list, f) # writes argument list
-    
     run(["tmux", *sock_ins, "new-session", "-ds", name, f"python {script_path} {h}"])
-    if users:
-        run(["chmod", "+774", sock_ins[1]])
-        for user in filter(None, users.split()):
-            # ok so maybe the virtualizer might be replacable with tmux's server-access -r flag but idc
+    
+    if '-S' in flags:
+        run(["chmod", "+774", socket_file])
+        if '-G' in flags:
+            run(["chgrp", flags['-G'], socket_file])
+    if '-U' in flags:
+        for user in filter(None, flags['-U'].split()):
             run(["tmux", *sock_ins, "server-access", "-a", user])
+            # ok so maybe the virtualizer might be replacable with tmux's server-access -r flag but idc
+    
     while True:
         code = run(
             ["tmux", *sock_ins, "has-session", "-t", name],
