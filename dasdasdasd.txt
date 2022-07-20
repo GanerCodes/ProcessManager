@@ -1,0 +1,11 @@
+"hi": {
+            "exec": ["sh", "-c", "echo $PWD $XD"],
+            "logfile": "canbedifferent.log",
+            "delay": 0,
+            "loop": true,
+            "cwd": "/",
+            "wait": 1,
+            "env": {
+                "XD": "hi"
+            }
+        },

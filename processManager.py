@@ -2,7 +2,7 @@
 
 # Tool to manage and log multiple processes
 
-import subprocess, threading, datetime, signal, json, time, sys, os
+import subprocess, threading, datetime, select, signal, json, time, sys, os
 
 def get_date(fmt):
     return datetime.datetime.now().strftime(fmt)
@@ -10,79 +10,133 @@ def get_date(fmt):
 def create_log_msg(fmt, stream, log):
     return get_date(fmt).format(stream=stream, log=log)
 
-def process_output(buffer, file_handle, prepend, fmt):
-    for i in buffer:
-        i = i.decode()
-        parts = i.split('\n')
-        if parts[-1] == '':
-            parts.pop(-1)
-        
-        for o in parts:
-            file_handle.write(create_log_msg(fmt, prepend, o)+'\n')
+def write_output(file_handler, fmt, prepend, buffer, final=False):
+    if final and (b'\n' not in buffer):
+        return buffer
+    
+    spl = buffer.split(b'\n')
+    if final:
+        segs = spl
+    else:
+        *segs, buffer = spl
+    
+    for seg in segs:
+        try:
+            decoded_seg = seg.decode()
+        except UnicodeDecodeError:
+            decoded_seg = str(seg)
+        message = create_log_msg(fmt, prepend, decoded_seg) + '\n'
+        file_handler.write(message)
+    
+    if not final:
+        return buffer
 
-def run_process(cmd, logfile, fmt, cwd=".", shell=[], config={}):
+def process_output(proc, file_handle, fmt, buffer_size=64):
+    stdout, stderr = proc.stdout.fileno(), proc.stderr.fileno()
+    stdout_buffer = stderr_buffer = b''
+    while proc.poll() is None:
+        r, w, e = select.select([stdout, stderr], [], [])
+        
+        if stdout in r:
+            stdout_buffer = write_output(file_handle, fmt, "stdout",
+                stdout_buffer + os.read(stdout, buffer_size))
+        if stderr in r:
+            stderr_buffer = write_output(file_handle, fmt, "stderr",
+                stderr_buffer + os.read(stderr, buffer_size))
+        
+    write_output(file_handle, fmt, "stdout", stdout_buffer, final=True)
+    write_output(file_handle, fmt, "stderr", stderr_buffer, final=True)
+
+def run_process(config, itteration):
+    cmd     = config['exec']
+    fmt     = config['fmt']
+    shell   = config['shell']
+    
     if isinstance(cmd, str):
         cmd = shell + [cmd]
     
-    with open(logfile, 'a', buffering=1) as f:
-        f.write(create_log_msg(fmt, "info", "Starting log.")+'\n')
-        config['process'] = (proc := subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
-        (out := threading.Thread(target=process_output, args=(proc.stdout, f, "stdout", fmt))).start()
-        (err := threading.Thread(target=process_output, args=(proc.stderr, f, "stderr", fmt))).start()
-        out.join(), err.join()
+    popen_kwargs = { "cwd": config['cwd'] }
+    if config['clean_env']:
+        popen_kwargs['env'] = config['env']
+    else:
+        popen_kwargs['env'] = os.environ.copy() | config['env']
+    
+    if config['log']:
+        with open(config['logfile'], 'a', buffering=1) as f:
+            f.write(create_log_msg(fmt, "info", f"Starting process (iter={itteration}).")+'\n')
+            config['process'] = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_kwargs)
+            output_processing = threading.Thread(
+                target=process_output,
+                args=(config['process'], f, fmt))
+            output_processing.start()
+            config['process'].wait()
+            output_processing.join()
+    else:
+        config['process'] = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **popen_kwargs)
+        config['process'].wait()
 
-def proc_runner(c):
-    time.sleep(c['init_delay'])
+def proc_runner(config):
+    init_delay = config['delay']
+    loop_delay = config['wait']
+    
+    time.sleep(init_delay)
+    itteration = 0
     while True:
-        run_process(c['cmd'], c['logfile'], c['fmt'], c['cwd'], c['shell'], c)
-        if not c['loop']:
+        run_process(config, itteration)
+        if not config['loop']:
             break
-        time.sleep(c['loop_delay'])
+        time.sleep(loop_delay)
+        itteration += 1
 
-def normalize_config(config):
-    config = {
+def normalize_task_config(main_config, task_name, unclean_task_config):
+    return {
+        "cwd": ".",
+        "delay": 0,
+        "loop": False,
+        "log": True,
+        "logfile": f"{task_name}.log",
+        "clean_env": False,
+        "env": {},
+        "wait": 1,
+        "fmt": main_config['fmt']
+    } | unclean_task_config
+
+def normalize_config(unclean_main_config):
+    main_config = {
         "shell": ["sh", "-c"],
         "paths": [],
         "logdir": "~/.log/",
         "fmt": "[%Y-%m-%d %H:%M:%S.%f] {stream}: {log}",
         "tasks": [],
-    } | config
+    } | unclean_main_config
     
-    for k, v in config['tasks'].items():
-        config['tasks'][k] = {
-            "cwd": ".",
-            "delay": 0,
-            "loop": False,
-            "wait": 1,
-            "fmt": config['fmt']
-        } | v
+    for task_name, unclean_task_config in main_config['tasks'].items():
+        main_config['tasks'][task_name] = normalize_task_config(main_config, task_name, unclean_task_config)
     
-    return config
+    return main_config
 
-def create_tasks(tasks, logdir, paths=[], shell=[]):
-    sys.path[0:0] = paths
+def create_tasks(config):
+    sys.path.insert(0, config['paths'])
+    
     task_threads = {}
-    for name, t in tasks.items():
-        logfile = os.path.join(logdir, name + '.log')
-        config = {
-            "cmd"       : t['exec'],
+    for name, task in config['tasks'].items():
+        if '/' in task['logfile']:
+            logfile = task['logfile']
+        else:
+            logfile = os.path.join(config['logdir'], task['logfile'])
+        
+        task_config = task | {
             "logfile"   : logfile,
-            "fmt"       : t['fmt'],
-            "shell"     : shell,
-            "cwd"       : t['cwd'],
-            "init_delay": t['delay'],
-            "loop"      : t['loop'],
-            "loop_delay": t['wait'],
+            "shell"     : config['shell'],
             "process"   : None
         }
-        thread = threading.Thread(target=proc_runner, args=(config, ))
+        thread = threading.Thread(target=proc_runner, args=(task_config, ))
+        task_threads[name] = (thread, task_config)
         thread.start()
-        task_threads[name] = (thread, config)
     return task_threads
 
 def run_config(config):
-    config = normalize_config(config)
-    return create_tasks(config['tasks'], config['logdir'], config['paths'], config['shell'])
+    return create_tasks(normalize_config(config))
 
 def input_loop(tasks):
     prompt_text = "> "

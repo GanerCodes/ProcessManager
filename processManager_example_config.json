@@ -4,16 +4,19 @@
     "logdir": "./",
     "fmt": "[%Y-%m-%d %H:%M:%S.%f] {stream}: {log}",
     "tasks": {
+        "tester": {
+            "exec": ["sh", "-c", "python -uc \"import time\nprint('🧀')\nfor i in range(5): print(i)\ntime.sleep(7)\nraise Exception()\nprint(2)\""]
+        },
         "hi": {
-            "exec": ["python", "./tmux_wrapper.py", "cheese", "btop"],
+            "exec": ["sh", "-c", "echo $PWD $XD"],
+            "logfile": "canbedifferent.log",
             "delay": 0,
             "loop": true,
-            "wait": 1
-        },
-        "cheese": {
-            "exec": "echo $PWD | cat",
             "cwd": "/",
-            "delay": 3
+            "wait": 1,
+            "env": {
+                "XD": "hi"
+            }
         }
     }
 }
