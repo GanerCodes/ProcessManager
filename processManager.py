@@ -1,4 +1,7 @@
 #!/usr/bin/python
+
+# Tool to manage and log multiple processes
+
 import subprocess, threading, datetime, signal, json, time, sys, os
 
 def get_date(fmt):

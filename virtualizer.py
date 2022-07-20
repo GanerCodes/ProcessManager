@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
-# Intended usage: in ssh server config:
+# Tool to block stdin from a program while acting as a simple viewer (but also reserves dynamic resizing)
 # ForceCommand /usr/bin/python /path/to/this/file.py /path/to/config.json
-# Serves to block stdin from a program, acting as a simple viewer, but also reserves dynamic resizing
 
 import json, time, sys, os
 

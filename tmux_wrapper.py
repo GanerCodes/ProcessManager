@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # Tool to spawn tmux session and wait for its exit
+
 import pickle, os
 from sys import argv
 from subprocess import run, DEVNULL
