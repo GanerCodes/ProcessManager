@@ -142,19 +142,19 @@ def input_loop(tasks):
     prompt_text = "> "
     while True:
         try:
-            if (command := input(prompt_text)).strip() == 'exit':
-                raise KeyboardInterrupt
+            command = input(prompt_text).strip()
+            if command == 'exit':
+                raise
         except KeyboardInterrupt:
             print("Press ^C or type exit to exit.")
             try:
-                if (command := input(prompt_text)).strip() == 'exit':
-                    raise KeyboardInterrupt
+                command = input(prompt_text).strip()
+                if command == 'exit':
+                    raise
             except KeyboardInterrupt:
-                for v in tasks.values():
-                    v[1]['loop'] = False
                 os._exit(0)
         
-        command = list(filter(None, command.split(' ')))
+        command = list(filter(None, command.split()))
         if len(command) == 0:
             continue
         
