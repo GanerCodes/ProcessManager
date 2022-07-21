@@ -64,6 +64,8 @@ def main():
                 if choice in config:
                     command = config[choice]
                     virtualize(command)
+                    print("Complete.")
+                    os._exit(0)
                 else:
                     return print(f'Choice "{choice}" not found in config.')
             except json.JSONDecodeError:
