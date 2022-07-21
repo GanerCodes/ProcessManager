@@ -36,17 +36,22 @@ def virtualize(command):
             set_winsize(sys.stdout.fileno(), r, c)
             time.sleep(refresh)
 
+    def io_thread():
+        while p.poll() is None:
+            r, w, e = select.select([sys.stdin, master_fd], [], [])
+            if master_fd in r:
+                o = os.read(master_fd, 10240)
+                os.write(sys.stdout.fileno(), o)
+            if sys.stdin in r:
+                i = os.read(sys.stdin.fileno(), 10240)
+                if b'\x03' in i:
+                    ctrl_break()
+    
     threading.Thread(target=update_size_thread).start()
-
+    threading.Thread(target=io_thread).start()
+    
     while p.poll() is None:
-        r, w, e = select.select([sys.stdin, master_fd], [], [])
-        if master_fd in r:
-            o = os.read(master_fd, 10240)
-            os.write(sys.stdout.fileno(), o)
-        if sys.stdin in r:
-            i = os.read(sys.stdin.fileno(), 10240)
-            if b'\x03' in i:
-                ctrl_break()
+        pass
 
 def main():
     if len(sys.argv) < 2:
