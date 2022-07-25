@@ -1,0 +1,14 @@
+{
+    "socket": {
+        "read": {
+            "a": "/tmp/xd"
+        },
+        "name": "tmuxpreviewxd",
+        "users": ["ganer"],
+        "group": "ganer",
+        "chmod": "+774"
+    },
+    "layout": [
+        [ "a/top", [ [ "a/top" ],
+                     [ "a/top" ] ] ] ]
+}
