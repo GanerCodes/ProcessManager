@@ -144,13 +144,13 @@ def input_loop(tasks):
         try:
             command = input(prompt_text).strip()
             if command == 'exit':
-                raise
+                raise KeyboardInterrupt
         except KeyboardInterrupt:
             print("Press ^C or type exit to exit.")
             try:
                 command = input(prompt_text).strip()
                 if command == 'exit':
-                    raise
+                    raise KeyboardInterrupt
             except KeyboardInterrupt:
                 os._exit(0)
         
