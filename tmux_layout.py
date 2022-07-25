@@ -52,8 +52,7 @@ def init_tmux_server(socket, name, perms, commands, size, kill=True):
 def generate_layout(layout, perms, base_dir, read_sockets, name=None):
     name = name or random_hash()
     path = os.path.join(base_dir, name)
-    if not os.path.isdir(base_dir):
-        os.makedirs(base_dir)
+    os.makedirs(base_dir, exist_ok=True)
     
     read_sockets[name] = path
     

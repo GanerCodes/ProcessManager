@@ -3,6 +3,9 @@
 # Tool to manage and log multiple processes
 
 import subprocess, threading, datetime, select, signal, json, time, sys, os
+from collections import namedtuple
+
+Task_Thread = namedtuple("Task_Thread", ("thread", "config"))
 
 def get_date(fmt):
     return datetime.datetime.now().strftime(fmt)
@@ -131,7 +134,7 @@ def create_tasks(config):
             "process"   : None
         }
         thread = threading.Thread(target=proc_runner, args=(task_config, ))
-        task_threads[name] = (thread, task_config)
+        task_threads[name] = Task_Thread(thread, task_config)
         thread.start()
     return task_threads
 
@@ -166,24 +169,29 @@ def input_loop(tasks):
                     print("kill <task0> <task1> ... | Stops task then kills process")
                 case "info", *_:
                     for name, v in tasks.items():
-                        sym = '✅' if v[0].is_alive() else '❌' 
-                        print("%s %s 🠒 %s" % (sym, name, v[1]['logfile']))
+                        sym = '✅' if v.thread.is_alive() else '❌' 
+                        print("%s %s 🠒 %s" % (sym, name, v.config['logfile']))
                 case ("stop"|"kill") as cmd, *names:
                     for name in names:
-                        if not tasks[name][1]['loop']:
+                        if name not in tasks:
+                            print("Name %s not in tasks." % name)
+                            continue
+                            
+                        if not tasks[name].config['loop']:
                             print("Loop has already been disable for task %s" % name)
                         else:
-                            tasks[name][1]['loop'] = False
+                            tasks[name].config['loop'] = False
                             print("Disabling task %s loop" % name)
+                        
                         if cmd == "kill":
-                            if (proc := tasks[name][1]['process']) is not None:
+                            if (proc := tasks[name].config['process']) is not None:
                                 try:
-                                    os.kill(proc.pid, signal.SIGUSR1)
+                                    os.kill(proc.pid, signal.SIGTERM)
                                     print("Sent kill signal to PID %s" % proc.pid)
                                 except ProcessLookupError:
-                                    print("Task %s does not have a currently running process.")
+                                    print("Task %s does not have a currently running process." % name)
                             else:
-                                print("Task %s does not have a currently running process.")
+                                print("Task %s does not have a currently running process." % name)
         except Exception as err:
             print("Command handler ran into an error? Error:", err)
 
